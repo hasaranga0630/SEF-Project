@@ -279,7 +279,7 @@ class _StockCountScreenState extends State<StockCountScreen>
     if (confirmed && mounted) await _sync();
   }
 
-  Future<void> _loadApprovalQueue() async {
+  Future<void> _loadApprovalQueue({bool announceErrors = true}) async {
     if (_approvalLoading) return;
     setState(() => _approvalLoading = true);
     try {
@@ -304,7 +304,7 @@ class _StockCountScreenState extends State<StockCountScreen>
         });
       }
     } catch (error) {
-      if (mounted) {
+      if (mounted && announceErrors) {
         showAppNotification(
           error is StateError
               ? error.message
@@ -388,22 +388,28 @@ class _StockCountScreenState extends State<StockCountScreen>
         await _loadApprovalQueue();
         return;
       }
+      if (!mounted) return;
+      // The saved review remains successful even if the following refresh fails.
+      setState(() => _approvalQueue.removeWhere(
+          (entry) => entry['id']?.toString() == countId));
       showAppNotification(
         decision == 'Approve'
             ? 'Stock adjustment approved and applied.'
             : 'Stock count rejected.',
+        title: decision == 'Approve' ? 'Approval successful' : 'Count rejected',
         tone: AppNotificationTone.success,
       );
-      await _loadApprovalQueue();
-      await _refreshCatalog();
     } catch (_) {
       if (mounted) {
         showAppNotification(
-          'Could not reach the approval service.',
+          'Could not confirm the review. Refresh stock activity before trying again.',
           tone: AppNotificationTone.error,
         );
       }
+      return;
     }
+    await _loadApprovalQueue(announceErrors: false);
+    await _refreshCatalog();
   }
 
   Future<void> _sync({bool silent = false, bool announceEmpty = true}) async {
