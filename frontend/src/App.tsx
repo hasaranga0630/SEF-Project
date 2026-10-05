@@ -12,6 +12,7 @@ import { ToastProvider } from './shared/components/Toast';
 import { ConfirmationProvider } from './shared/components/ConfirmationProvider';
 import './features/inventory/inventory.css';
 import './features/inventory/inventory-refresh.css';
+import './features/inventory/purchase-order-print.css';
 import { ToastProvider as InventoryToastProvider } from './features/inventory/ui/ToastContext';
 
 /* Everything past the landing page is split out of the initial bundle.

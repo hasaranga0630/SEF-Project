@@ -1,0 +1,120 @@
+/* Keep the selected PO printable even when the workspace uses its dark theme.
+ * This stylesheet follows the screen overrides deliberately. */
+@media print {
+  body:has(.purchase-orders-page),
+  body:has(.purchase-orders-page) :is(#root, .app-shell, .app-main, .app-content, .inventory-scope, .purchase-orders-page, .purchase-orders-layout) {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: #fff !important;
+    color: #172033 !important;
+    transform: none !important;
+  }
+  body:has(.purchase-orders-page) :is(.sidebar, .app-topbar, .app-footer, .mobile-quick-nav, .inventory-workspace-nav) {
+    display: none !important;
+  }
+  body:has(.purchase-orders-page) .inventory-scope .purchase-orders-page .po-detail-panel {
+    --color-bg: #fff;
+    --color-surface: #fff;
+    --color-surface-muted: #f7f9fc;
+    --color-text: #172033;
+    --color-text-secondary: #536078;
+    --color-text-muted: #59677f;
+    --color-border: #d7deea;
+    --color-primary: #243b67;
+    --color-primary-soft: #eef3fb;
+    --color-good: #16734a;
+    position: static !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    font-size: 10pt !important;
+  }
+  body:has(.purchase-orders-page) .inventory-scope .purchase-orders-page .po-detail-panel * {
+    box-sizing: border-box !important;
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    translate: none !important;
+    text-shadow: none !important;
+    box-shadow: none !important;
+  }
+  body:has(.purchase-orders-page) .inventory-scope .purchase-orders-page .po-detail-panel :is(.panel-head, .po-detail-body, .timeline-section, .receipt-line-summary) {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    color: #172033 !important;
+    background: #fff !important;
+  }
+  body:has(.purchase-orders-page) .inventory-scope .purchase-orders-page .po-detail-panel :is(.panel-head h2, h3, .receipt-line-summary > span, .receipt-line-quantities strong) {
+    color: #172033 !important;
+  }
+  /* Branch switching and progress controls belong to the interactive workspace. */
+  body:has(.purchase-orders-page) .inventory-scope .purchase-orders-page :is(.purchase-order-group-card, .po-detail-body > .lifecycle-tracker, .po-actions) {
+    display: none !important;
+  }
+  body:has(.purchase-orders-page) .inventory-scope .purchase-orders-page .detail-grid {
+    min-width: 0 !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  body:has(.purchase-orders-page) .inventory-scope .purchase-orders-page .detail-grid dd {
+    margin: 3px 0 0 !important;
+    overflow-wrap: anywhere;
+  }
+  body:has(.purchase-orders-page) .inventory-scope .purchase-orders-page .timeline-section {
+    padding: 0 !important;
+    border: 0 !important;
+    break-inside: auto;
+  }
+  body:has(.purchase-orders-page) .inventory-scope .purchase-orders-page .timeline-section h3::before {
+    display: none !important;
+  }
+  body:has(.purchase-orders-page) .inventory-scope .purchase-orders-page .status-timeline {
+    min-width: 0 !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  body:has(.purchase-orders-page) .inventory-scope .purchase-orders-page :is(.purchase-order-timestamp, .receipt-line-quantities > span) {
+    color: #536078 !important;
+    background: #f7f9fc !important;
+    font-size: 9pt !important;
+    white-space: normal !important;
+  }
+  body:has(.purchase-orders-page) .inventory-scope .purchase-orders-page .receipt-line-quantities :is(small, strong) {
+    font-size: 9pt !important;
+  }
+  body:has(.purchase-orders-page) .inventory-scope .purchase-orders-page .po-detail-items {
+    break-inside: auto !important;
+  }
+  body:has(.purchase-orders-page) .inventory-scope .purchase-orders-page .po-detail-items-table {
+    min-width: 0 !important;
+    width: 100% !important;
+    table-layout: fixed !important;
+  }
+  body:has(.purchase-orders-page) .inventory-scope .purchase-orders-page .po-detail-items-table :is(th, td) {
+    padding: 6px 4px !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+  }
+  body:has(.purchase-orders-page) .inventory-scope .purchase-orders-page .po-detail-items-table :is(th, td):first-child {
+    width: 25%;
+  }
+  body:has(.purchase-orders-page) .inventory-scope .purchase-orders-page .po-print-signatures {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
