@@ -81,6 +81,10 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = CurrentUserTokenValidator.ValidateAsync
+        };
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,

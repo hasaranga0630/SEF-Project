@@ -78,6 +78,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           isInitialized: true,
           isProfileComplete: true, // Assume complete for now
         );
+        await validateSession();
       } else {
         state = const AuthState(isInitialized: true);
       }
@@ -85,6 +86,45 @@ class AuthNotifier extends StateNotifier<AuthState> {
       // Corrupted storage → start clean
       await SecureStorageService.clearAll();
       state = const AuthState(isInitialized: true);
+    }
+  }
+
+  bool _validatingSession = false;
+
+  /// Validate cached credentials without replacing JWT access claims locally.
+  Future<bool> validateSession() async {
+    final token = state.token;
+    if (!state.isAuthenticated) return false;
+    if (_validatingSession) return true;
+    _validatingSession = true;
+    try {
+      final response = await ApiService.dio.get('/auth/me');
+      if (state.token != token || !state.isAuthenticated) return false;
+      final current = User.fromJson(response.data as Map<String, dynamic>);
+      final cached = state.user!;
+      if (current.role != cached.role || current.branchId != cached.branchId ||
+          current.tenantId != cached.tenantId) {
+        await SecureStorageService.clearSession();
+        state = const AuthState(
+          isInitialized: true,
+          error: 'Account access changed. Sign in with your email and password.',
+        );
+        return false;
+      }
+      return state.isAuthenticated && state.token == token;
+    } on DioException catch (error) {
+      if (error.response?.statusCode == 401 && state.token == token) {
+        await SecureStorageService.clearSession();
+        state = const AuthState(
+          isInitialized: true,
+          error: 'Your session expired or account access changed. Sign in with your email and password.',
+        );
+        return false;
+      }
+      // Keep offline access available; the API still validates every request.
+      return state.isAuthenticated;
+    } finally {
+      _validatingSession = false;
     }
   }
 
@@ -183,7 +223,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           isInitialized: true,
           isProfileComplete: true,
         );
-        return true;
+        return await validateSession();
       } catch (_) {}
     }
 
@@ -210,7 +250,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           isInitialized: true,
           isProfileComplete: true,
         );
-        return true;
+        return await validateSession();
       } catch (_) {}
     }
 

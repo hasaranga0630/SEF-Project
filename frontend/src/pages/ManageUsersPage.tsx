@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { getStoredToken } from '../features/inventory/authToken';
 import { useToast } from '../features/inventory/ui/ToastContext';
 import { useConfirmation } from '../shared/components/ConfirmationProvider';
+import { API_BASE_URL } from '../api/apiBaseUrl';
 import './ManageUsersPage.css';
 
 type ManagedUser = { id: string; fullName: string; email: string; phone: string; role: 'Admin' | 'Manager' | 'Staff'; branchId: string | null; isApproved: boolean };
@@ -22,7 +23,7 @@ export function ManageUsersPage() {
   const [editingUser, setEditingUser] = useState<ManagedUser | null>(null);
 
   async function loadUsers() {
-    const response = await fetch('/api/users', { headers: { Accept: 'application/json', Authorization: `Bearer ${token}` } });
+    const response = await fetch(`${API_BASE_URL}/users`, { headers: { Accept: 'application/json', Authorization: `Bearer ${token}` } });
     if (!response.ok) {
       const body = await response.json().catch(() => ({})) as { message?: string };
       throw new Error(body.message ?? `Unable to load users (HTTP ${response.status}).`);
@@ -31,7 +32,7 @@ export function ManageUsersPage() {
   }
 
   async function loadBranches() {
-    const response = await fetch('/api/users/branches', { headers: { Accept: 'application/json', Authorization: `Bearer ${token}` } });
+    const response = await fetch(`${API_BASE_URL}/users/branches`, { headers: { Accept: 'application/json', Authorization: `Bearer ${token}` } });
     if (!response.ok) {
       if (response.status === 404) {
         throw new Error('User management API is not running. Stop and restart the backend, then refresh this page.');
@@ -44,7 +45,7 @@ export function ManageUsersPage() {
   }
 
   async function loadPendingUsers() {
-    const response = await fetch('/api/users/pending', { headers: { Accept: 'application/json', Authorization: `Bearer ${token}` } });
+    const response = await fetch(`${API_BASE_URL}/users/pending`, { headers: { Accept: 'application/json', Authorization: `Bearer ${token}` } });
     if (!response.ok) throw new Error(`Unable to load signup requests (HTTP ${response.status}).`);
     setPendingUsers(await response.json() as ManagedUser[]);
   }
@@ -68,7 +69,7 @@ export function ManageUsersPage() {
     })) return;
     setSaving(true);
     try {
-      const response = await fetch('/api/users', {
+      const response = await fetch(`${API_BASE_URL}/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ ...form, branchId: form.branchId || null }),
@@ -98,14 +99,14 @@ export function ManageUsersPage() {
         })) return;
       setSaving(true);
       try {
-        const response = await fetch(`/api/users/${editingUser.id}`, {
+        const response = await fetch(`${API_BASE_URL}/users/${editingUser.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({ fullName: editingUser.fullName, phone: editingUser.phone, role: editingUser.role, branchId: editingUser.branchId, password: null }),
         });
         const body = await response.json().catch(() => ({})) as { message?: string };
         if (!response.ok) throw new Error(body.message ?? 'Unable to update user.');
-        setUsers((current) => current.map((user) => user.id === editingUser.id ? editingUser : user));
+        setUsers((current) => current.map((user) => user.id === editingUser.id ? body as ManagedUser : user));
         setEditingUser(null);
         notify('User details updated.', 'success');
       } catch (error) {
@@ -128,7 +129,7 @@ export function ManageUsersPage() {
         return;
       }
       try {
-        const response = await fetch(`/api/users/${user.id}/approve`, {
+        const response = await fetch(`${API_BASE_URL}/users/${user.id}/approve`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({ role: user.role, branchId }),
@@ -152,7 +153,7 @@ export function ManageUsersPage() {
       confirmLabel: action === 'reject' ? 'Reject signup' : 'Delete user',
       tone: 'danger',
     })) return;
-    const response = await fetch(`/api/users/${user.id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    const response = await fetch(`${API_BASE_URL}/users/${user.id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
     if (!response.ok) {
       const body = await response.json().catch(() => ({})) as { message?: string };
       notify(body.message ?? 'Unable to delete user.', 'error');
@@ -174,13 +175,14 @@ export function ManageUsersPage() {
     })) return;
     setUpdatingId(user.id);
     try {
-      const response = await fetch(`/api/users/${user.id}`, {
+      const response = await fetch(`${API_BASE_URL}/users/${user.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ fullName: user.fullName, phone: user.phone, role, branchId: user.branchId, password: null }),
       });
-      if (!response.ok) throw new Error('Unable to update user role.');
-      setUsers((current) => current.map((candidate) => candidate.id === user.id ? { ...candidate, role } : candidate));
+      const body = await response.json() as ManagedUser & { message?: string };
+      if (!response.ok) throw new Error(body.message ?? 'Unable to update user role.');
+      setUsers((current) => current.map((candidate) => candidate.id === user.id ? body : candidate));
       notify('User role updated.', 'success');
     } catch (error) {
       notify(error instanceof Error ? error.message : 'Unable to update user role.', 'error');

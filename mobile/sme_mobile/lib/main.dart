@@ -26,10 +26,17 @@ class MyApp extends ConsumerStatefulWidget {
   ConsumerState<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends ConsumerState<MyApp> {
+class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
+  Timer? _sessionTimer;
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _sessionTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed) {
+        unawaited(ref.read(authProvider.notifier).validateSession());
+      }
+    });
     // Restore JWT + user from flutter_secure_storage on cold start
     Future.microtask(() async {
       await ref.read(authProvider.notifier).initializeAuth();
@@ -37,6 +44,20 @@ class _MyAppState extends ConsumerState<MyApp> {
       // own internal try/catch guards for why this is safe to call unconditionally.
       unawaited(PushNotificationService.init(ref));
     });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(ref.read(authProvider.notifier).validateSession());
+    }
+  }
+
+  @override
+  void dispose() {
+    _sessionTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   @override

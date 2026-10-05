@@ -2,7 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { Suspense, lazy, useEffect } from 'react';
 import { store } from './store/store';
-import { initializeAuth } from './store/authSlice';
+import { initializeAuth, logout } from './store/authSlice';
+import { API_BASE_URL } from './api/apiBaseUrl';
 import LandingPage from './features/marketing/LandingPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import AppLayout from './shared/components/AppLayout';
@@ -91,6 +92,44 @@ function RouteFallback() {
 const AuthInitializer = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     store.dispatch(initializeAuth());
+    let checking = false;
+    let disposed = false;
+    const validateSession = async () => {
+      const token = store.getState().auth.token;
+      if (!token || checking || document.visibilityState === 'hidden') return;
+      checking = true;
+      try {
+        const response = await fetch(`${API_BASE_URL}/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const savedUser = store.getState().auth.user;
+        const currentUser = response.ok ? await response.json() : null;
+        const accessChanged = savedUser && currentUser && (
+          currentUser.role !== savedUser.role ||
+          (currentUser.branchId ?? null) !== (savedUser.branchId ?? null) ||
+          currentUser.tenantId !== savedUser.tenantId
+        );
+        if (!disposed && (response.status === 401 || accessChanged) && store.getState().auth.token === token) {
+          store.dispatch(logout());
+          window.location.assign('/login');
+        }
+      } catch {
+        // A network failure does not invalidate the saved session.
+      } finally {
+        checking = false;
+      }
+    };
+    void validateSession();
+    const timer = window.setInterval(() => void validateSession(), 60_000);
+    const onVisible = () => void validateSession();
+    window.addEventListener('focus', onVisible);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      disposed = true;
+      window.clearInterval(timer);
+      window.removeEventListener('focus', onVisible);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, []);
   return <>{children}</>;
 };
