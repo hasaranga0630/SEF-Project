@@ -30,7 +30,7 @@ public class MediaController : ControllerBase
     /// <remarks>Branding images stay Admin/Manager-only; "avatar" is open to any
     /// signed-in user because Staff and Customers set their own profile photo.</remarks>
     [HttpPost("upload")]
-    public async Task<IActionResult> Upload([FromForm] IFormFile file, [FromForm] string purpose)
+    public async Task<IActionResult> Upload(IFormFile file, [FromForm] string purpose)
     {
         if (file == null || file.Length == 0)
             return BadRequest(new { message = "No file was uploaded." });
